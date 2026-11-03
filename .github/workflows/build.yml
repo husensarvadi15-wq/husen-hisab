@@ -19,6 +19,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Reorganize Android Project Structure
+        run: |
+          if [ -d "android" ]; then
+            cp -r android/* .
+          fi
+
       - name: Generate Debug Keystore and Print SHA Keys
         run: |
           mkdir -p ~/.android
@@ -36,9 +42,9 @@ jobs:
       - name: Build Debug APK
         run: |
           if [ -f "./gradlew" ]; then
-            ./gradlew clean assembleDebug --no-build-cache
+            ./gradlew assembleDebug --no-build-cache
           else
-            gradle clean assembleDebug --no-build-cache
+            gradle assembleDebug --no-build-cache
           fi
 
       - name: Upload APK
