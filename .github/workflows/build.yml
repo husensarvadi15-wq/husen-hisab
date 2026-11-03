@@ -19,10 +19,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Prepare Android Project
+      - name: Reorganize Android Project Structure
         run: |
           mkdir -p app/src/main/java/com/sarvadiverse/husenhisab
           mkdir -p app/src/main/res/values
@@ -30,7 +27,7 @@ jobs:
           # Kotlin ફાઇલો પેકેજ ફોલ્ડરમાં મોકલો
           mv *.kt app/src/main/java/com/sarvadiverse/husenhisab/ 2>/dev/null || true
 
-          # મેનિફેસ્ટ અને સર્વિસ ફાઇલ
+          # મેનિફેસ્ટ અને સર્વિસ ફાઇલ ખસેડો
           [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
           [ -f google-services.json ] && cp google-services.json app/
 
@@ -64,9 +61,7 @@ jobs:
           EOF
 
           # App build.gradle.kts સેટ કરો
-          if [ -f "build.gradle.kts.bak" ]; then
-            cp build.gradle.kts.bak app/build.gradle.kts
-          elif [ -f "build.gradle.kts" ]; then
+          if [ -f "build.gradle.kts" ]; then
             cp build.gradle.kts app/build.gradle.kts
           fi
 
@@ -83,4 +78,3 @@ jobs:
         with:
           name: HusenHisab-APK
           path: "app/build/outputs/apk/debug/*.apk"
-          
