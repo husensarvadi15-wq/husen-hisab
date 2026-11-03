@@ -25,15 +25,14 @@ jobs:
           gradle-version: '8.2'
           cache-disabled: true
 
-      - name: Clean & Prepare Android Structure
+      - name: Prepare Clean Android Project
         run: |
-          # 1. फोल्डर स्ट्रक्चर तैयार करें
           mkdir -p app/src/main/java/com/sarvadiverse/husenhisab/ui/theme
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/drawable
 
-          # 2. FileProvider के लिए file_paths.xml बनाएं
+          # FileProvider XML
           cat << 'EOF' > app/src/main/res/xml/file_paths.xml
           <?xml version="1.0" encoding="utf-8"?>
           <paths xmlns:android="http://schemas.android.com/apk/res/android">
@@ -43,7 +42,7 @@ jobs:
           </paths>
           EOF
 
-          # 3. जरूरी XML रिसोर्स बनाएं
+          # Resources
           cat << 'EOF' > app/src/main/res/values/strings.xml
           <resources>
               <string name="app_name">Husen Hisab</string>
@@ -66,19 +65,25 @@ jobs:
           </vector>
           EOF
 
-          # 4. Theme और Color को सिर्फ ui/theme फोल्डर में भेजें
+          # Theme & Color ફાઇલો
           [ -f Theme.kt ] && mv Theme.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
           [ -f Color.kt ] && mv Color.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
 
-          # 5. स्क्रीन और मॉडल फाइलों को अलग-अलग मुख्य पैकेज में भेजें
-          for file in MainActivity.kt AppViewModel.kt Models.kt DashboardScreen.kt DailyWorkScreen.kt LedgerScreen.kt ReportsScreen.kt LoginScreen.kt; do
-            [ -f "$file" ] && mv "$file" app/src/main/java/com/sarvadiverse/husenhisab/
+          # બાકીની તમામ Kotlin ફાઇલો પેકેજમાં મૂકો
+          for file in *.kt; do
+            if [ -f "$file" ]; then
+              mv "$file" app/src/main/java/com/sarvadiverse/husenhisab/
+            fi
           done
 
-          # 6. AndroidManifest
+          # તમામ ફાઇલોમાં પેકેજ સાચું છે તે સુનિશ્ચિત કરો
+          sed -i '1s/^package.*/package com.sarvadiverse.husenhisab/' app/src/main/java/com/sarvadiverse/husenhisab/*.kt 2>/dev/null || true
+          sed -i '1s/^package.*/package com.sarvadiverse.husenhisab.ui.theme/' app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/*.kt 2>/dev/null || true
+
+          # AndroidManifest
           [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
 
-          # 7. google-services.json
+          # google-services.json
           cat << 'EOF' > app/google-services.json
           {
             "project_info": {
@@ -103,7 +108,7 @@ jobs:
           }
           EOF
 
-          # 8. settings.gradle.kts
+          # settings.gradle.kts
           cat << 'EOF' > settings.gradle.kts
           pluginManagement {
               repositories {
@@ -123,7 +128,7 @@ jobs:
           include(":app")
           EOF
 
-          # 9. Root build.gradle.kts
+          # Root build.gradle.kts
           cat << 'EOF' > build.gradle.kts
           plugins {
               id("com.android.application") version "8.2.0" apply false
@@ -132,7 +137,7 @@ jobs:
           }
           EOF
 
-          # 10. App build.gradle.kts
+          # App build.gradle.kts
           cat << 'EOF' > app/build.gradle.kts
           plugins {
               id("com.android.application")
@@ -177,6 +182,8 @@ jobs:
               implementation("androidx.core:core-ktx:1.12.0")
               implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
               implementation("androidx.activity:activity-compose:1.8.2")
+              implementation("androidx.activity:activity-ktx:1.8.2")
+              implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
               implementation(platform("androidx.compose:compose-bom:2023.10.01"))
               implementation("androidx.compose.ui:ui")
               implementation("androidx.compose.ui:ui-graphics")
