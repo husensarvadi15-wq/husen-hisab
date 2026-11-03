@@ -19,12 +19,106 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Download & Extract Full Source
+      - name: Reorganize Android Project Structure
         run: |
-          if [ -f "HusenHisab_Complete_Project.zip" ]; then
-            unzip -o HusenHisab_Complete_Project.zip
-            cp -r HusenHisab/* .
-          fi
+          mkdir -p app/src/main/res/values app/src/main/res/xml app/src/main/java/com/sarvadiverse/husenhisab/model app/src/main/java/com/sarvadiverse/husenhisab/viewmodel app/src/main/java/com/sarvadiverse/husenhisab/ui/screens app/src/main/java/com/sarvadiverse/husenhisab/ui/theme gradle/wrapper
+
+          [ -f "AndroidManifest.xml" ] && mv AndroidManifest.xml app/src/main/
+          [ -f "strings.xml" ] && mv strings.xml app/src/main/res/values/
+          [ -f "file_paths.xml" ] && mv file_paths.xml app/src/main/res/xml/
+          [ -f "google-services.json" ] && mv google-services.json app/
+          [ -f "gradle-wrapper.properties" ] && mv gradle-wrapper.properties gradle/wrapper/
+
+          [ -f "MainActivity.kt" ] && mv MainActivity.kt app/src/main/java/com/sarvadiverse/husenhisab/
+          [ -f "Models.kt" ] && mv Models.kt app/src/main/java/com/sarvadiverse/husenhisab/model/
+          [ -f "AppViewModel.kt" ] && mv AppViewModel.kt app/src/main/java/com/sarvadiverse/husenhisab/viewmodel/
+          [ -f "Color.kt" ] && mv Color.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
+          [ -f "Theme.kt" ] && mv Theme.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
+          [ -f "LoginScreen.kt" ] && mv LoginScreen.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/screens/
+          [ -f "DashboardScreen.kt" ] && mv DashboardScreen.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/screens/
+          [ -f "DailyWorkScreen.kt" ] && mv DailyWorkScreen.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/screens/
+          [ -f "LedgerScreen.kt" ] && mv LedgerScreen.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/screens/
+          [ -f "ReportsScreen.kt" ] && mv ReportsScreen.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/screens/
+
+          cat << 'EOF' > build.gradle.kts
+          plugins {
+              id("com.android.application") version "8.7.2" apply false
+              id("org.jetbrains.kotlin.android") version "1.9.24" apply false
+              id("com.google.gms.google-services") version "4.4.2" apply false
+          }
+          EOF
+
+          cat << 'EOF' > settings.gradle.kts
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "Husen Hisab"
+          include(":app")
+          EOF
+
+          cat << 'EOF' > app/build.gradle.kts
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+              id("com.google.gms.google-services")
+          }
+          android {
+              namespace = "com.sarvadiverse.husenhisab"
+              compileSdk = 35
+              defaultConfig {
+                  applicationId = "com.sarvadiverse.husenhisab"
+                  minSdk = 24
+                  targetSdk = 35
+                  versionCode = 1
+                  versionName = "1.0.0"
+              }
+              buildTypes {
+                  release {
+                      isMinifyEnabled = false
+                  }
+              }
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+              buildFeatures {
+                  compose = true
+              }
+              composeOptions {
+                  kotlinCompilerExtensionVersion = "1.5.14"
+              }
+          }
+          dependencies {
+              implementation("androidx.core:core-ktx:1.13.1")
+              implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
+              implementation("androidx.activity:activity-compose:1.9.3")
+              implementation(platform("androidx.compose:compose-bom:2024.10.00"))
+              implementation("androidx.compose.ui:ui")
+              implementation("androidx.compose.ui:ui-graphics")
+              implementation("androidx.compose.ui:ui-tooling-preview")
+              implementation("androidx.compose.material3:material3")
+              implementation("androidx.compose.material:material-icons-extended")
+              implementation("androidx.navigation:navigation-compose:2.8.3")
+              implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
+              implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+              implementation("com.google.firebase:firebase-auth-ktx")
+              implementation("com.google.firebase:firebase-firestore-ktx")
+          }
+          EOF
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -37,6 +131,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: HusenHisab-Debug-APK
+          name: HusenHisab-APK
           path: app/build/outputs/apk/debug/*.apk
-          
