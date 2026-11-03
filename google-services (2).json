@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "995329935845",
+    "project_id": "husen-hisab-5b492",
+    "storage_bucket": "husen-hisab-5b492.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:995329935845:android:f7f31efe5dfea92ea5470c",
+        "android_client_info": {
+          "package_name": "com.sarvadiverse.husenhisab"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCTvk4Dj4dMk_WFbEzQEad3ekSlzE8h9fo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
