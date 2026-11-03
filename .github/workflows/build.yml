@@ -25,14 +25,17 @@ jobs:
           gradle-version: '8.2'
           cache-disabled: true
 
-      - name: Prepare Clean Android Project
+      - name: Fully Auto-Configure and Fix Code
         run: |
+          # 1. સાચા પેકેજ ફોલ્ડર્સ તૈયાર કરો
+          mkdir -p app/src/main/java/com/sarvadiverse/husenhisab/model
+          mkdir -p app/src/main/java/com/sarvadiverse/husenhisab/viewmodel
           mkdir -p app/src/main/java/com/sarvadiverse/husenhisab/ui/theme
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/drawable
 
-          # FileProvider XML
+          # 2. FileProvider XML
           cat << 'EOF' > app/src/main/res/xml/file_paths.xml
           <?xml version="1.0" encoding="utf-8"?>
           <paths xmlns:android="http://schemas.android.com/apk/res/android">
@@ -42,7 +45,7 @@ jobs:
           </paths>
           EOF
 
-          # Resources
+          # 3. Resources
           cat << 'EOF' > app/src/main/res/values/strings.xml
           <resources>
               <string name="app_name">Husen Hisab</string>
@@ -65,25 +68,91 @@ jobs:
           </vector>
           EOF
 
-          # Theme & Color ફાઇલો
+          # 4. ફાઇલોને તેમના યોગ્ય ફોલ્ડરમાં મોકલો
+          [ -f Models.kt ] && mv Models.kt app/src/main/java/com/sarvadiverse/husenhisab/model/
+          [ -f AppViewModel.kt ] && mv AppViewModel.kt app/src/main/java/com/sarvadiverse/husenhisab/viewmodel/
           [ -f Theme.kt ] && mv Theme.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
           [ -f Color.kt ] && mv Color.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
 
-          # બાકીની તમામ Kotlin ફાઇલો પેકેજમાં મૂકો
-          for file in *.kt; do
-            if [ -f "$file" ]; then
-              mv "$file" app/src/main/java/com/sarvadiverse/husenhisab/
-            fi
-          done
+          # બાકીની સ્ક્રીન ફાઇલો મુખ્ય પેકેજમાં મૂકો
+          mv *.kt app/src/main/java/com/sarvadiverse/husenhisab/ 2>/dev/null || true
 
-          # તમામ ફાઇલોમાં પેકેજ સાચું છે તે સુનિશ્ચિત કરો
-          sed -i '1s/^package.*/package com.sarvadiverse.husenhisab/' app/src/main/java/com/sarvadiverse/husenhisab/*.kt 2>/dev/null || true
-          sed -i '1s/^package.*/package com.sarvadiverse.husenhisab.ui.theme/' app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/*.kt 2>/dev/null || true
+          # 5. MainActivity.kt ને આપોઆપ 100% સાચી સ્ક્રીન કોલ્સ સાથે રીરાઇટ કરો
+          cat << 'EOF' > app/src/main/java/com/sarvadiverse/husenhisab/MainActivity.kt
+          package com.sarvadiverse.husenhisab
 
-          # AndroidManifest
+          import android.os.Bundle
+          import androidx.activity.ComponentActivity
+          import androidx.activity.compose.setContent
+          import androidx.lifecycle.ViewModelProvider
+          import androidx.compose.foundation.layout.fillMaxSize
+          import androidx.compose.material3.MaterialTheme
+          import androidx.compose.material3.Surface
+          import androidx.compose.ui.Modifier
+          import androidx.navigation.compose.NavHost
+          import androidx.navigation.compose.composable
+          import androidx.navigation.compose.rememberNavController
+          import com.sarvadiverse.husenhisab.ui.theme.HusenHisabTheme
+          import com.sarvadiverse.husenhisab.viewmodel.AppViewModel
+
+          class MainActivity : ComponentActivity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  
+                  val viewModel = ViewModelProvider(this)[AppViewModel::class.java]
+
+                  setContent {
+                      HusenHisabTheme {
+                          Surface(
+                              modifier = Modifier.fillMaxSize(),
+                              color = MaterialTheme.colorScheme.background
+                          ) {
+                              val navController = rememberNavController()
+
+                              NavHost(
+                                  navController = navController,
+                                  startDestination = "dashboard"
+                              ) {
+                                  composable("dashboard") {
+                                      DashboardScreen(
+                                          viewModel = viewModel,
+                                          onNavigateToWork = { navController.navigate("daily_work") },
+                                          onNavigateToLedger = { navController.navigate("ledger") },
+                                          onNavigateToReports = { navController.navigate("reports") },
+                                          onLogout = { }
+                                      )
+                                  }
+                                  composable("daily_work") {
+                                      DailyWorkScreen(
+                                          viewModel = viewModel,
+                                          onNavigateBack = { navController.popBackStack() }
+                                      )
+                                  }
+                                  composable("ledger") {
+                                      LedgerScreen(
+                                          viewModel = viewModel,
+                                          isLargePole = false,
+                                          onNavigateBack = { navController.popBackStack() }
+                                      )
+                                  }
+                                  composable("reports") {
+                                      ReportsScreen(
+                                          viewModel = viewModel,
+                                          onNavigateBack = { navController.popBackStack() }
+                                      )
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+          EOF
+
+          # 6. AndroidManifest
           [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
 
-          # google-services.json
+          # 7. google-services.json
           cat << 'EOF' > app/google-services.json
           {
             "project_info": {
@@ -108,7 +177,7 @@ jobs:
           }
           EOF
 
-          # settings.gradle.kts
+          # 8. settings.gradle.kts
           cat << 'EOF' > settings.gradle.kts
           pluginManagement {
               repositories {
@@ -128,7 +197,7 @@ jobs:
           include(":app")
           EOF
 
-          # Root build.gradle.kts
+          # 9. Root build.gradle.kts
           cat << 'EOF' > build.gradle.kts
           plugins {
               id("com.android.application") version "8.2.0" apply false
@@ -137,7 +206,7 @@ jobs:
           }
           EOF
 
-          # App build.gradle.kts
+          # 10. App build.gradle.kts
           cat << 'EOF' > app/build.gradle.kts
           plugins {
               id("com.android.application")
