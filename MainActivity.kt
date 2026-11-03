@@ -3,7 +3,6 @@ package com.sarvadiverse.husenhisab
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -13,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.sarvadiverse.husenhisab.ui.theme.HusenHisabTheme
+import com.sarvadiverse.husenhisab.viewmodel.AppViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,16 +33,32 @@ class MainActivity : ComponentActivity() {
                         startDestination = "dashboard"
                     ) {
                         composable("dashboard") {
-                            DashboardScreen(navController = navController, viewModel = viewModel)
+                            DashboardScreen(
+                                viewModel = viewModel,
+                                onNavigateToWork = { navController.navigate("daily_work") },
+                                onNavigateToLedger = { navController.navigate("ledger") },
+                                onNavigateToReports = { navController.navigate("reports") },
+                                onLogout = { /* લૉગિન હટાવેલ હોવાથી ખાલી રાખ્યું છે */ }
+                            )
                         }
                         composable("daily_work") {
-                            DailyWorkScreen(navController = navController, viewModel = viewModel)
+                            DailyWorkScreen(
+                                viewModel = viewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
                         }
                         composable("ledger") {
-                            LedgerScreen(navController = navController, viewModel = viewModel)
+                            LedgerScreen(
+                                viewModel = viewModel,
+                                isLargePole = false,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
                         }
                         composable("reports") {
-                            ReportsScreen(navController = navController, viewModel = viewModel)
+                            ReportsScreen(
+                                viewModel = viewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
                         }
                     }
                 }
