@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -14,10 +15,11 @@ import androidx.navigation.compose.rememberNavController
 import com.sarvadiverse.husenhisab.ui.theme.HusenHisabTheme
 
 class MainActivity : ComponentActivity() {
-    private val viewModel: AppViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        val viewModel = ViewModelProvider(this)[AppViewModel::class.java]
+
         setContent {
             HusenHisabTheme {
                 Surface(
@@ -26,7 +28,6 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    // startDestination સીધું "dashboard" રાખ્યું છે (Login Screen બાયપાસ)
                     NavHost(
                         navController = navController,
                         startDestination = "dashboard"
