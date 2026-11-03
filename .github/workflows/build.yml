@@ -19,6 +19,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Download & Extract Full Source
+        run: |
+          if [ -f "HusenHisab_Complete_Project.zip" ]; then
+            unzip -o HusenHisab_Complete_Project.zip
+            cp -r HusenHisab/* .
+          fi
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
