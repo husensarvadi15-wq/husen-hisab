@@ -33,32 +33,16 @@ class MainActivity : ComponentActivity() {
                         startDestination = "dashboard"
                     ) {
                         composable("dashboard") {
-                            DashboardScreen(
-                                viewModel = viewModel,
-                                onNavigateToWork = { navController.navigate("daily_work") },
-                                onNavigateToLedger = { navController.navigate("ledger") },
-                                onNavigateToReports = { navController.navigate("reports") },
-                                onLogout = { /* લૉગિન હટાવેલ હોવાથી ખાલી રાખ્યું છે */ }
-                            )
+                            DashboardScreen(navController = navController, viewModel = viewModel)
                         }
                         composable("daily_work") {
-                            DailyWorkScreen(
-                                viewModel = viewModel,
-                                onNavigateBack = { navController.popBackStack() }
-                            )
+                            DailyWorkScreen(navController = navController, viewModel = viewModel)
                         }
                         composable("ledger") {
-                            LedgerScreen(
-                                viewModel = viewModel,
-                                isLargePole = false,
-                                onNavigateBack = { navController.popBackStack() }
-                            )
+                            LedgerScreen(navController = navController, viewModel = viewModel)
                         }
                         composable("reports") {
-                            ReportsScreen(
-                                viewModel = viewModel,
-                                onNavigateBack = { navController.popBackStack() }
-                            )
+                            ReportsScreen(navController = navController, viewModel = viewModel)
                         }
                     }
                 }
