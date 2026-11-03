@@ -26,16 +26,54 @@ jobs:
 
       - name: Configure Android Project
         run: |
-          mkdir -p app/src/main/java/com/sarvadiverse/husenhisab
+          # 1. સાચું પેકેજ સ્ટ્રક્ચર બનાવો
+          mkdir -p app/src/main/java/com/sarvadiverse/husenhisab/ui/theme
           mkdir -p app/src/main/res/values
 
-          # Kotlin ફાઇલો પેકેજમાં ગોઠવો
+          # 2. Theme અને Color ફાઇલોને સાચા ફોલ્ડરમાં ખસેડો
+          [ -f Theme.kt ] && mv Theme.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
+          [ -f Color.kt ] && mv Color.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
+
+          # 3. બાકીની તમામ Kotlin ફાઇલો પેકેજમાં ખસેડો
           mv *.kt app/src/main/java/com/sarvadiverse/husenhisab/ 2>/dev/null || true
 
-          # AndroidManifest ગોઠવો
+          # 4. AndroidManifest ખસેડો
           [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
 
-          # 1. settings.gradle.kts
+          # 5. એક માન્ય (Valid) ડમી google-services.json તૈયાર કરો જેથી કમ્પાઇલર અટકે નહીં
+          cat << 'EOF' > app/google-services.json
+          {
+            "project_info": {
+              "project_number": "1234567890",
+              "project_id": "husen-hisab-5b492",
+              "storage_bucket": "husen-hisab-5b492.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:1234567890:android:abcdef",
+                  "android_client_info": {
+                    "package_name": "com.sarvadiverse.husenhisab"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "fake_api_key_for_offline_build"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+
+          # 6. settings.gradle.kts
           cat << 'EOF' > settings.gradle.kts
           pluginManagement {
               repositories {
@@ -55,19 +93,21 @@ jobs:
           include(":app")
           EOF
 
-          # 2. Root build.gradle.kts (ગૂગલ સર્વિસીસ હટાવી દીધી છે)
+          # 7. Root build.gradle.kts
           cat << 'EOF' > build.gradle.kts
           plugins {
               id("com.android.application") version "8.2.0" apply false
               id("org.jetbrains.kotlin.android") version "1.9.20" apply false
+              id("com.google.gms.google-services") version "4.4.0" apply false
           }
           EOF
 
-          # 3. App build.gradle.kts (Malformed JSON ભૂલ આપતો પ્લગઇન કાઢી નાખ્યો)
+          # 8. App build.gradle.kts
           cat << 'EOF' > app/build.gradle.kts
           plugins {
               id("com.android.application")
               id("org.jetbrains.kotlin.android")
+              id("com.google.gms.google-services")
           }
 
           android {
@@ -80,16 +120,11 @@ jobs:
                   targetSdk = 34
                   versionCode = 1
                   versionName = "1.0"
-                  testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                  vectorDrawables {
-                      useSupportLibrary = true
-                  }
               }
 
               buildTypes {
                   release {
                       isMinifyEnabled = false
-                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
                   }
               }
               compileOptions {
@@ -105,11 +140,6 @@ jobs:
               composeOptions {
                   kotlinCompilerExtensionVersion = "1.5.4"
               }
-              packaging {
-                  resources {
-                      excludes += "/META-INF/{AL2.0,LGPL2.1}"
-                  }
-              }
           }
 
           dependencies {
@@ -124,9 +154,9 @@ jobs:
               implementation("androidx.navigation:navigation-compose:2.7.7")
               implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
 
-              // Firebase Firestore
               implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
               implementation("com.google.firebase:firebase-firestore-ktx")
+              implementation("com.google.firebase:firebase-auth-ktx")
           }
           EOF
 
