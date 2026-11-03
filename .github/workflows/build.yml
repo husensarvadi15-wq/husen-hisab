@@ -24,15 +24,15 @@ jobs:
         with:
           gradle-version: '8.2'
 
-      - name: Prepare Complete Android Structure
+      - name: Prepare Clean Android Structure
         run: |
-          # 1. સાચું પેકેજ સ્ટ્રક્ચર અને રિસોર્સ ફોલ્ડર્સ બનાવો
+          # 1. સાચા ફોલ્ડર્સ બનાવો
           mkdir -p app/src/main/java/com/sarvadiverse/husenhisab/ui/theme
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/drawable
 
-          # 2. FileProvider માટે જરૂરી file_paths.xml બનાવો
+          # 2. FileProvider માટે file_paths.xml બનાવો
           cat << 'EOF' > app/src/main/res/xml/file_paths.xml
           <?xml version="1.0" encoding="utf-8"?>
           <paths xmlns:android="http://schemas.android.com/apk/res/android">
@@ -42,7 +42,7 @@ jobs:
           </paths>
           EOF
 
-          # 3. ખૂટતા રિસોર્સિસ (strings, themes, drawable)
+          # 3. ખૂટતા રિસોર્સિસ ઉમેરો
           cat << 'EOF' > app/src/main/res/values/strings.xml
           <resources>
               <string name="app_name">Husen Hisab</string>
@@ -65,15 +65,17 @@ jobs:
           </vector>
           EOF
 
-          # 4. Kotlin ફાઇલો પેકેજમાં ગોઠવો
-          [ -f Theme.kt ] && cp Theme.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
-          [ -f Color.kt ] && cp Color.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
+          # 4. Theme અને Color ને ફક્ત ui/theme માં જ ખસેડો (ડુપ્લિકેટ બનવા ન દો)
+          [ -f Theme.kt ] && mv Theme.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
+          [ -f Color.kt ] && mv Color.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
+
+          # 5. બાકીની બધી Kotlin ફાઇલો મુખ્ય પેકેજમાં ખસેડો
           mv *.kt app/src/main/java/com/sarvadiverse/husenhisab/ 2>/dev/null || true
 
-          # 5. AndroidManifest ખસેડો
+          # 6. AndroidManifest
           [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
 
-          # 6. google-services.json
+          # 7. google-services.json
           cat << 'EOF' > app/google-services.json
           {
             "project_info": {
@@ -98,7 +100,7 @@ jobs:
           }
           EOF
 
-          # 7. settings.gradle.kts
+          # 8. settings.gradle.kts
           cat << 'EOF' > settings.gradle.kts
           pluginManagement {
               repositories {
@@ -118,7 +120,7 @@ jobs:
           include(":app")
           EOF
 
-          # 8. Root build.gradle.kts
+          # 9. Root build.gradle.kts
           cat << 'EOF' > build.gradle.kts
           plugins {
               id("com.android.application") version "8.2.0" apply false
@@ -127,7 +129,7 @@ jobs:
           }
           EOF
 
-          # 9. App build.gradle.kts
+          # 10. App build.gradle.kts
           cat << 'EOF' > app/build.gradle.kts
           plugins {
               id("com.android.application")
