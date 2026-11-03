@@ -19,7 +19,22 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Generate Debug Keystore and Print SHA-1
+      - name: Inspect Files and Fix Structure
+        run: |
+          echo "=== ફાઇલ લિસ્ટ (રુટ) ==="
+          ls -la
+          echo "=== app અથવા src ક્યાં છે તે શોધો ==="
+          find . -maxdepth 3 -type d
+
+          # જો અંદર કોઈ ફોલ્ડરમાં app હોય તો તેને રુટ પર લાવો
+          ACTUAL_APP=$(find . -mindepth 2 -maxdepth 3 -type d -name "app" | head -n 1)
+          if [ -n "$ACTUAL_APP" ]; then
+            PARENT=$(dirname "$ACTUAL_APP")
+            echo "Found app inside $PARENT, moving contents up..."
+            cp -rn "$PARENT"/* . || true
+          fi
+
+      - name: Generate Debug Keystore and Print SHA Keys
         run: |
           mkdir -p ~/.android
           keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" || true
@@ -30,16 +45,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Grant Execute Permission
+        run: chmod +x gradlew || true
+
       - name: Build Debug APK
         run: |
-          # પ્રોજેક્ટમાં જ્યાં settings.gradle હોય તે ફોલ્ડર શોધો
-          PROJECT_ROOT=$(find . -name "settings.gradle" -o -name "settings.gradle.kts" | head -n 1 | xargs dirname)
-          echo "Navigating to project directory: $PROJECT_ROOT"
-          cd "$PROJECT_ROOT"
-          
-          # જો gradlew હોય તો તેનાથી રન કરો, નહીં તો સિસ્ટમ ગ્રેડલથી
           if [ -f "./gradlew" ]; then
-            chmod +x gradlew
             ./gradlew assembleDebug --no-build-cache
           else
             gradle assembleDebug --no-build-cache
