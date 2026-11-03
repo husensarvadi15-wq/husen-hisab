@@ -11,10 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.auth.FirebaseAuth
-import com.sarvadiverse.husenhisab.ui.screens.*
 import com.sarvadiverse.husenhisab.ui.theme.HusenHisabTheme
-import com.sarvadiverse.husenhisab.viewmodel.AppViewModel
 
 class MainActivity : ComponentActivity() {
     private val viewModel: AppViewModel by viewModels()
@@ -23,44 +20,28 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             HusenHisabTheme {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
                     val navController = rememberNavController()
-                    val auth = FirebaseAuth.getInstance()
-                    val startDestination = if (auth.currentUser != null) "dashboard" else "login"
 
-                    NavHost(navController = navController, startDestination = startDestination) {
-                        composable("login") {
-                            LoginScreen(
-                                onLoginSuccess = {
-                                    viewModel.loadAllData()
-                                    navController.navigate("dashboard") {
-                                        popUpTo("login") { inclusive = true }
-                                    }
-                                }
-                            )
-                        }
+                    // startDestination સીધું "dashboard" રાખ્યું છે (Login Screen બાયપાસ)
+                    NavHost(
+                        navController = navController,
+                        startDestination = "dashboard"
+                    ) {
                         composable("dashboard") {
-                            DashboardScreen(
-                                viewModel = viewModel,
-                                onNavigateToWork = { navController.navigate("work_entry") },
-                                onNavigateToLedger = { isLarge -> navController.navigate("ledger/$isLarge") },
-                                onNavigateToReports = { navController.navigate("reports") },
-                                onLogout = {
-                                    navController.navigate("login") {
-                                        popUpTo("dashboard") { inclusive = true }
-                                    }
-                                }
-                            )
+                            DashboardScreen(navController = navController, viewModel = viewModel)
                         }
-                        composable("work_entry") {
-                            DailyWorkScreen(viewModel = viewModel)
+                        composable("daily_work") {
+                            DailyWorkScreen(navController = navController, viewModel = viewModel)
                         }
-                        composable("ledger/{isLarge}") { backStackEntry ->
-                            val isLarge = backStackEntry.arguments?.getString("isLarge")?.toBoolean() ?: false
-                            LedgerScreen(isLargePole = isLarge, viewModel = viewModel)
+                        composable("ledger") {
+                            LedgerScreen(navController = navController, viewModel = viewModel)
                         }
                         composable("reports") {
-                            ReportsScreen(viewModel = viewModel)
+                            ReportsScreen(navController = navController, viewModel = viewModel)
                         }
                     }
                 }
