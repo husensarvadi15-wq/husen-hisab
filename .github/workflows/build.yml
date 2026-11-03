@@ -19,22 +19,42 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Inspect Files and Fix Structure
+      - name: Assemble Standard Android Directory Structure
         run: |
-          echo "=== ફાઇલ લિસ્ટ (રુટ) ==="
-          ls -la
-          echo "=== app અથવા src ક્યાં છે તે શોધો ==="
-          find . -maxdepth 3 -type d
+          # 1. સાચું ડિરેક્ટરી માળખું બનાવો
+          mkdir -p app/src/main/java/com/sarvadiverse/husenhisab
+          mkdir -p app/src/main/res/values
+          mkdir -p gradle/wrapper
 
-          # જો અંદર કોઈ ફોલ્ડરમાં app હોય તો તેને રુટ પર લાવો
-          ACTUAL_APP=$(find . -mindepth 2 -maxdepth 3 -type d -name "app" | head -n 1)
-          if [ -n "$ACTUAL_APP" ]; then
-            PARENT=$(dirname "$ACTUAL_APP")
-            echo "Found app inside $PARENT, moving contents up..."
-            cp -rn "$PARENT"/* . || true
+          # 2. બધી Kotlin (.kt) ફાઇલોને પેકેજ ફોલ્ડરમાં ખસેડો
+          mv *.kt app/src/main/java/com/sarvadiverse/husenhisab/ 2>/dev/null || true
+
+          # 3. AndroidManifest અને google-services.json ખસેડો
+          [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
+          [ -f google-services.json ] && cp google-services.json app/
+
+          # 4. Gradle Wrapper ફાઇલો ખસેડો
+          [ -f gradle-wrapper.properties ] && mv gradle-wrapper.properties gradle/wrapper/
+
+          # 5. Root build.gradle.kts અને app/build.gradle.kts ગોઠવો
+          if [ -f build.gradle.kts ]; then
+            cp build.gradle.kts app/build.gradle.kts
+            cat << 'EOF' > build.gradle.kts
+          plugins {
+              alias(libs.plugins.android.application) apply false
+              alias(libs.plugins.kotlin.android) apply false
+              alias(libs.plugins.google.gms.google.services) apply false
+          }
+          EOF
           fi
 
-      - name: Generate Debug Keystore and Print SHA Keys
+          # 6. settings.gradle.kts માં app મોડ્યુલ સામેલ કરો
+          echo 'include(":app")' > settings.gradle.kts
+
+          echo "Directory structure prepared successfully!"
+          ls -la app/src/main/
+
+      - name: Generate Keystore and Print SHA Keys
         run: |
           mkdir -p ~/.android
           keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" || true
@@ -45,20 +65,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Grant Execute Permission
-        run: chmod +x gradlew || true
-
       - name: Build Debug APK
-        run: |
-          if [ -f "./gradlew" ]; then
-            ./gradlew assembleDebug --no-build-cache
-          else
-            gradle assembleDebug --no-build-cache
-          fi
+        run: gradle :app:assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: HusenHisab-APK
-          path: "**/build/outputs/apk/debug/*.apk"
+          path: "app/build/outputs/apk/debug/*.apk"
           
