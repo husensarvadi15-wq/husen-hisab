@@ -19,38 +19,36 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Setup Specific Gradle 8.2
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.2'
+
       - name: Organize Android Project Files
         run: |
           mkdir -p app/src/main/java/com/sarvadiverse/husenhisab
           mkdir -p app/src/main/res/values
-          mkdir -p gradle/wrapper
 
-          # Move all Kotlin files to package path
+          # બધી Kotlin ફાઇલો પેકેજમાં ખસેડો
           mv *.kt app/src/main/java/com/sarvadiverse/husenhisab/ 2>/dev/null || true
 
-          # Move Manifest and json
+          # AndroidManifest અને google-services.json
           [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
           [ -f google-services.json ] && cp google-services.json app/
 
-          # Move gradle wrapper
-          [ -f gradle-wrapper.properties ] && mv gradle-wrapper.properties gradle/wrapper/
-
-          # Setup root and app build files
+          # App મોડ્યુલ માટે build.gradle.kts
           if [ -f build.gradle.kts ]; then
             cp build.gradle.kts app/build.gradle.kts
             cat << 'EOF' > build.gradle.kts
           plugins {
-              alias(libs.plugins.android.application) apply false
-              alias(libs.plugins.kotlin.android) apply false
-              alias(libs.plugins.google.gms.google.services) apply false
+              id("com.android.application") version "8.2.0" apply false
+              id("org.jetbrains.kotlin.android") version "1.9.20" apply false
+              id("com.google.gms.google-services") version "4.4.0" apply false
           }
           EOF
           fi
 
           echo 'include(":app")' > settings.gradle.kts
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
 
       - name: Build Debug APK
         run: gradle :app:assembleDebug --stacktrace
