@@ -32,9 +32,8 @@ jobs:
           # Kotlin ફાઇલો પેકેજમાં ગોઠવો
           mv *.kt app/src/main/java/com/sarvadiverse/husenhisab/ 2>/dev/null || true
 
-          # AndroidManifest અને google-services.json
+          # AndroidManifest ગોઠવો
           [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
-          [ -f google-services.json ] && cp google-services.json app/
 
           # 1. settings.gradle.kts
           cat << 'EOF' > settings.gradle.kts
@@ -56,21 +55,19 @@ jobs:
           include(":app")
           EOF
 
-          # 2. Root build.gradle.kts
+          # 2. Root build.gradle.kts (ગૂગલ સર્વિસીસ હટાવી દીધી છે)
           cat << 'EOF' > build.gradle.kts
           plugins {
               id("com.android.application") version "8.2.0" apply false
               id("org.jetbrains.kotlin.android") version "1.9.20" apply false
-              id("com.google.gms.google-services") version "4.4.0" apply false
           }
           EOF
 
-          # 3. App build.gradle.kts (તમામ જરૂરી લાઇબ્રેરીઓ સાથે)
+          # 3. App build.gradle.kts (Malformed JSON ભૂલ આપતો પ્લગઇન કાઢી નાખ્યો)
           cat << 'EOF' > app/build.gradle.kts
           plugins {
               id("com.android.application")
               id("org.jetbrains.kotlin.android")
-              id("com.google.gms.google-services")
           }
 
           android {
@@ -127,10 +124,9 @@ jobs:
               implementation("androidx.navigation:navigation-compose:2.7.7")
               implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
 
-              // Firebase
+              // Firebase Firestore
               implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
               implementation("com.google.firebase:firebase-firestore-ktx")
-              implementation("com.google.firebase:firebase-auth-ktx")
           }
           EOF
 
