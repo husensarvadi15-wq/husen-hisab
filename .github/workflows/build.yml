@@ -24,15 +24,18 @@ jobs:
         with:
           gradle-version: '8.2'
 
-      - name: Prepare Clean Android Structure
+      - name: Clean & Prepare Android Project
         run: |
-          # 1. સાચા ફોલ્ડર્સ બનાવો
+          # જૂના ફોલ્ડર સાફ કરો
+          rm -rf app
+          
+          # ૧. સિંગલ પેકેજ સ્ટ્રક્ચર બનાવો
           mkdir -p app/src/main/java/com/sarvadiverse/husenhisab/ui/theme
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/drawable
 
-          # 2. FileProvider માટે file_paths.xml બનાવો
+          # ૨. FileProvider માટે file_paths.xml બનાવો
           cat << 'EOF' > app/src/main/res/xml/file_paths.xml
           <?xml version="1.0" encoding="utf-8"?>
           <paths xmlns:android="http://schemas.android.com/apk/res/android">
@@ -42,7 +45,7 @@ jobs:
           </paths>
           EOF
 
-          # 3. ખૂટતા રિસોર્સિસ ઉમેરો
+          # ૩. તમામ રિસોર્સિસ (strings, themes, dummy icon)
           cat << 'EOF' > app/src/main/res/values/strings.xml
           <resources>
               <string name="app_name">Husen Hisab</string>
@@ -65,17 +68,17 @@ jobs:
           </vector>
           EOF
 
-          # 4. Theme અને Color ને ફક્ત ui/theme માં જ ખસેડો (ડુપ્લિકેટ બનવા ન દો)
-          [ -f Theme.kt ] && mv Theme.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
-          [ -f Color.kt ] && mv Color.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
+          # ૪. Theme અને Color ને સ્પષ્ટપણે ui/theme માં જ ખસેડો
+          mv Theme.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/ 2>/dev/null || true
+          mv Color.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/ 2>/dev/null || true
 
-          # 5. બાકીની બધી Kotlin ફાઇલો મુખ્ય પેકેજમાં ખસેડો
+          # ૫. બાકીની ફાઈલો મુખ્ય પેકેજમાં ખસેડો (જેથી ડુપ્લિકેટ બને જ નહીં)
           mv *.kt app/src/main/java/com/sarvadiverse/husenhisab/ 2>/dev/null || true
 
-          # 6. AndroidManifest
+          # ૬. AndroidManifest ખસેડો
           [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
 
-          # 7. google-services.json
+          # ૭. google-services.json
           cat << 'EOF' > app/google-services.json
           {
             "project_info": {
@@ -100,7 +103,7 @@ jobs:
           }
           EOF
 
-          # 8. settings.gradle.kts
+          # ૮. settings.gradle.kts
           cat << 'EOF' > settings.gradle.kts
           pluginManagement {
               repositories {
@@ -120,7 +123,7 @@ jobs:
           include(":app")
           EOF
 
-          # 9. Root build.gradle.kts
+          # ૯. Root build.gradle.kts
           cat << 'EOF' > build.gradle.kts
           plugins {
               id("com.android.application") version "8.2.0" apply false
@@ -129,7 +132,7 @@ jobs:
           }
           EOF
 
-          # 10. App build.gradle.kts
+          # ૧૦. App build.gradle.kts
           cat << 'EOF' > app/build.gradle.kts
           plugins {
               id("com.android.application")
@@ -160,6 +163,7 @@ jobs:
               }
               kotlinOptions {
                   jvmTarget = "17"
+                  freeCompilerArgs += listOf("-opt-in=androidx.compose.material3.ExperimentalMaterial3Api")
               }
               buildFeatures {
                   compose = true
