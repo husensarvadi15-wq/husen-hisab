@@ -19,20 +19,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Locate and Setup Android Project
+      - name: Reorganize Android Project Structure
         run: |
-          echo "Current directory contents:"
-          ls -la
-          # Find directory containing settings.gradle or build.gradle
-          SETTINGS_DIR=$(find . -maxdepth 3 -name "settings.gradle" -o -name "settings.gradle.kts" | head -n 1 | xargs dirname || echo ".")
-          echo "Found project root at: $SETTINGS_DIR"
-          if [ "$SETTINGS_DIR" != "." ]; then
-            cp -rn $SETTINGS_DIR/* . || true
+          if [ -d "android" ]; then
+            cp -r android/* .
           fi
-          # Ensure gradlew has execute permission
-          chmod +x gradlew || true
 
-      - name: Generate Debug Keystore and Print SHA Keys
+      - name: Generate Debug Keystore and Print SHA-1
         run: |
           mkdir -p ~/.android
           keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" || true
@@ -44,16 +37,11 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Build Debug APK
-        run: |
-          if [ -f "./gradlew" ]; then
-            ./gradlew assembleDebug --stacktrace
-          else
-            gradle assembleDebug --stacktrace
-          fi
+        run: gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: HusenHisab-APK
-          path: "**/build/outputs/apk/debug/*.apk"
+          path: app/build/outputs/apk/debug/*.apk
           
