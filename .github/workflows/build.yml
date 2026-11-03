@@ -19,24 +19,23 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Assemble Standard Android Directory Structure
+      - name: Organize Android Project Files
         run: |
-          # 1. સાચું ડિરેક્ટરી માળખું બનાવો
           mkdir -p app/src/main/java/com/sarvadiverse/husenhisab
           mkdir -p app/src/main/res/values
           mkdir -p gradle/wrapper
 
-          # 2. બધી Kotlin (.kt) ફાઇલોને પેકેજ ફોલ્ડરમાં ખસેડો
+          # Move all Kotlin files to package path
           mv *.kt app/src/main/java/com/sarvadiverse/husenhisab/ 2>/dev/null || true
 
-          # 3. AndroidManifest અને google-services.json ખસેડો
+          # Move Manifest and json
           [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
           [ -f google-services.json ] && cp google-services.json app/
 
-          # 4. Gradle Wrapper ફાઇલો ખસેડો
+          # Move gradle wrapper
           [ -f gradle-wrapper.properties ] && mv gradle-wrapper.properties gradle/wrapper/
 
-          # 5. Root build.gradle.kts અને app/build.gradle.kts ગોઠવો
+          # Setup root and app build files
           if [ -f build.gradle.kts ]; then
             cp build.gradle.kts app/build.gradle.kts
             cat << 'EOF' > build.gradle.kts
@@ -48,19 +47,7 @@ jobs:
           EOF
           fi
 
-          # 6. settings.gradle.kts માં app મોડ્યુલ સામેલ કરો
           echo 'include(":app")' > settings.gradle.kts
-
-          echo "Directory structure prepared successfully!"
-          ls -la app/src/main/
-
-      - name: Generate Keystore and Print SHA Keys
-        run: |
-          mkdir -p ~/.android
-          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" || true
-          echo "=================== SHA KEYS ==================="
-          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep -E "SHA1:|SHA256:"
-          echo "================================================="
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
