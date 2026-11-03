@@ -25,17 +25,15 @@ jobs:
           gradle-version: '8.2'
           cache-disabled: true
 
-      - name: Fully Auto-Configure and Fix Code
+      - name: Fix Packages and Build Architecture
         run: |
-          # 1. સાચા પેકેજ ફોલ્ડર્સ તૈયાર કરો
-          mkdir -p app/src/main/java/com/sarvadiverse/husenhisab/model
-          mkdir -p app/src/main/java/com/sarvadiverse/husenhisab/viewmodel
+          # 1. એક જ મુખ્ય પેકેજ ફોલ્ડર બનાવો
           mkdir -p app/src/main/java/com/sarvadiverse/husenhisab/ui/theme
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/drawable
 
-          # 2. FileProvider XML
+          # 2. FileProvider માટે XML
           cat << 'EOF' > app/src/main/res/xml/file_paths.xml
           <?xml version="1.0" encoding="utf-8"?>
           <paths xmlns:android="http://schemas.android.com/apk/res/android">
@@ -45,7 +43,7 @@ jobs:
           </paths>
           EOF
 
-          # 3. Resources
+          # 3. XML Resources
           cat << 'EOF' > app/src/main/res/values/strings.xml
           <resources>
               <string name="app_name">Husen Hisab</string>
@@ -68,16 +66,21 @@ jobs:
           </vector>
           EOF
 
-          # 4. ફાઇલોને તેમના યોગ્ય ફોલ્ડરમાં મોકલો
-          [ -f Models.kt ] && mv Models.kt app/src/main/java/com/sarvadiverse/husenhisab/model/
-          [ -f AppViewModel.kt ] && mv AppViewModel.kt app/src/main/java/com/sarvadiverse/husenhisab/viewmodel/
+          # 4. Theme & Color ને ui/theme માં મૂકો
           [ -f Theme.kt ] && mv Theme.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
           [ -f Color.kt ] && mv Color.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/theme/
 
-          # બાકીની સ્ક્રીન ફાઇલો મુખ્ય પેકેજમાં મૂકો
+          # 5. બાકી બધી Kotlin ફાઇલો એક જ ફોલ્ડરમાં મૂકો
           mv *.kt app/src/main/java/com/sarvadiverse/husenhisab/ 2>/dev/null || true
 
-          # 5. MainActivity.kt ને આપોઆપ 100% સાચી સ્ક્રીન કોલ્સ સાથે રીરાઇટ કરો
+          # 6. તમામ એરર આપતા ખોટા Imports કાઢી નાખો
+          sed -i '/import com.sarvadiverse.husenhisab.model/d' app/src/main/java/com/sarvadiverse/husenhisab/*.kt 2>/dev/null || true
+          sed -i '/import com.sarvadiverse.husenhisab.viewmodel/d' app/src/main/java/com/sarvadiverse/husenhisab/*.kt 2>/dev/null || true
+          
+          # બધી ફાઇલોનું પેકેજ નેમ એક સરખું com.sarvadiverse.husenhisab કરી દો
+          sed -i 's/^package .*/package com.sarvadiverse.husenhisab/' app/src/main/java/com/sarvadiverse/husenhisab/*.kt 2>/dev/null || true
+
+          # 7. MainActivity ને સાચી રીતે ઓટો-જનરેટ કરો
           cat << 'EOF' > app/src/main/java/com/sarvadiverse/husenhisab/MainActivity.kt
           package com.sarvadiverse.husenhisab
 
@@ -93,7 +96,6 @@ jobs:
           import androidx.navigation.compose.composable
           import androidx.navigation.compose.rememberNavController
           import com.sarvadiverse.husenhisab.ui.theme.HusenHisabTheme
-          import com.sarvadiverse.husenhisab.viewmodel.AppViewModel
 
           class MainActivity : ComponentActivity() {
               override fun onCreate(savedInstanceState: Bundle?) {
@@ -114,32 +116,16 @@ jobs:
                                   startDestination = "dashboard"
                               ) {
                                   composable("dashboard") {
-                                      DashboardScreen(
-                                          viewModel = viewModel,
-                                          onNavigateToWork = { navController.navigate("daily_work") },
-                                          onNavigateToLedger = { navController.navigate("ledger") },
-                                          onNavigateToReports = { navController.navigate("reports") },
-                                          onLogout = { }
-                                      )
+                                      DashboardScreen(navController = navController, viewModel = viewModel)
                                   }
                                   composable("daily_work") {
-                                      DailyWorkScreen(
-                                          viewModel = viewModel,
-                                          onNavigateBack = { navController.popBackStack() }
-                                      )
+                                      DailyWorkScreen(navController = navController, viewModel = viewModel)
                                   }
                                   composable("ledger") {
-                                      LedgerScreen(
-                                          viewModel = viewModel,
-                                          isLargePole = false,
-                                          onNavigateBack = { navController.popBackStack() }
-                                      )
+                                      LedgerScreen(navController = navController, viewModel = viewModel)
                                   }
                                   composable("reports") {
-                                      ReportsScreen(
-                                          viewModel = viewModel,
-                                          onNavigateBack = { navController.popBackStack() }
-                                      )
+                                      ReportsScreen(navController = navController, viewModel = viewModel)
                                   }
                               }
                           }
@@ -149,10 +135,10 @@ jobs:
           }
           EOF
 
-          # 6. AndroidManifest
+          # 8. AndroidManifest
           [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
 
-          # 7. google-services.json
+          # 9. Dummy google-services.json
           cat << 'EOF' > app/google-services.json
           {
             "project_info": {
@@ -177,7 +163,7 @@ jobs:
           }
           EOF
 
-          # 8. settings.gradle.kts
+          # 10. settings.gradle.kts
           cat << 'EOF' > settings.gradle.kts
           pluginManagement {
               repositories {
@@ -197,7 +183,7 @@ jobs:
           include(":app")
           EOF
 
-          # 9. Root build.gradle.kts
+          # 11. Root build.gradle.kts
           cat << 'EOF' > build.gradle.kts
           plugins {
               id("com.android.application") version "8.2.0" apply false
@@ -206,7 +192,7 @@ jobs:
           }
           EOF
 
-          # 10. App build.gradle.kts
+          # 12. App build.gradle.kts
           cat << 'EOF' > app/build.gradle.kts
           plugins {
               id("com.android.application")
