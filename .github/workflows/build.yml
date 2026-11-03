@@ -19,19 +19,24 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Reorganize Android Project Structure
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.2'
+
+      - name: Configure Android Project
         run: |
           mkdir -p app/src/main/java/com/sarvadiverse/husenhisab
           mkdir -p app/src/main/res/values
 
-          # Kotlin ફાઇલો પેકેજ ફોલ્ડરમાં મોકલો
+          # Kotlin ફાઇલો પેકેજમાં ગોઠવો
           mv *.kt app/src/main/java/com/sarvadiverse/husenhisab/ 2>/dev/null || true
 
-          # મેનિફેસ્ટ અને સર્વિસ ફાઇલ ખસેડો
+          # AndroidManifest અને google-services.json
           [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
           [ -f google-services.json ] && cp google-services.json app/
 
-          # Root settings.gradle.kts તૈયાર કરો
+          # 1. settings.gradle.kts
           cat << 'EOF' > settings.gradle.kts
           pluginManagement {
               repositories {
@@ -51,30 +56,90 @@ jobs:
           include(":app")
           EOF
 
-          # Root build.gradle.kts તૈયાર કરો
+          # 2. Root build.gradle.kts
           cat << 'EOF' > build.gradle.kts
           plugins {
-              id("com.android.application") version "8.2.2" apply false
-              id("org.jetbrains.kotlin.android") version "1.9.22" apply false
-              id("com.google.gms.google-services") version "4.4.1" apply false
+              id("com.android.application") version "8.2.0" apply false
+              id("org.jetbrains.kotlin.android") version "1.9.20" apply false
+              id("com.google.gms.google-services") version "4.4.0" apply false
           }
           EOF
 
-          # App build.gradle.kts સેટ કરો
-          if [ -f "build.gradle.kts" ]; then
-            cp build.gradle.kts app/build.gradle.kts
-          fi
+          # 3. App build.gradle.kts (તમામ જરૂરી લાઇબ્રેરીઓ સાથે)
+          cat << 'EOF' > app/build.gradle.kts
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+              id("com.google.gms.google-services")
+          }
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.2'
+          android {
+              namespace = "com.sarvadiverse.husenhisab"
+              compileSdk = 34
+
+              defaultConfig {
+                  applicationId = "com.sarvadiverse.husenhisab"
+                  minSdk = 24
+                  targetSdk = 34
+                  versionCode = 1
+                  versionName = "1.0"
+                  testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                  vectorDrawables {
+                      useSupportLibrary = true
+                  }
+              }
+
+              buildTypes {
+                  release {
+                      isMinifyEnabled = false
+                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+                  }
+              }
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+              buildFeatures {
+                  compose = true
+              }
+              composeOptions {
+                  kotlinCompilerExtensionVersion = "1.5.4"
+              }
+              packaging {
+                  resources {
+                      excludes += "/META-INF/{AL2.0,LGPL2.1}"
+                  }
+              }
+          }
+
+          dependencies {
+              implementation("androidx.core:core-ktx:1.12.0")
+              implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+              implementation("androidx.activity:activity-compose:1.8.2")
+              implementation(platform("androidx.compose:compose-bom:2023.10.01"))
+              implementation("androidx.compose.ui:ui")
+              implementation("androidx.compose.ui:ui-graphics")
+              implementation("androidx.compose.ui:ui-tooling-preview")
+              implementation("androidx.compose.material3:material3")
+              implementation("androidx.navigation:navigation-compose:2.7.7")
+              implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+
+              // Firebase
+              implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
+              implementation("com.google.firebase:firebase-firestore-ktx")
+              implementation("com.google.firebase:firebase-auth-ktx")
+          }
+          EOF
 
       - name: Build Debug APK
-        run: gradle :app:assembleDebug --stacktrace
+        run: gradle :app:assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: HusenHisab-APK
           path: "app/build/outputs/apk/debug/*.apk"
+          
