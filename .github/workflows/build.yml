@@ -23,6 +23,7 @@ jobs:
         run: |
           mkdir -p app/src/main/res/values app/src/main/res/xml app/src/main/java/com/sarvadiverse/husenhisab/model app/src/main/java/com/sarvadiverse/husenhisab/viewmodel app/src/main/java/com/sarvadiverse/husenhisab/ui/screens app/src/main/java/com/sarvadiverse/husenhisab/ui/theme gradle/wrapper
 
+          # Move files
           [ -f "AndroidManifest.xml" ] && mv AndroidManifest.xml app/src/main/
           [ -f "strings.xml" ] && mv strings.xml app/src/main/res/values/
           [ -f "file_paths.xml" ] && mv file_paths.xml app/src/main/res/xml/
@@ -40,6 +41,21 @@ jobs:
           [ -f "LedgerScreen.kt" ] && mv LedgerScreen.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/screens/
           [ -f "ReportsScreen.kt" ] && mv ReportsScreen.kt app/src/main/java/com/sarvadiverse/husenhisab/ui/screens/
 
+          # Create missing XML resource files
+          cat << 'EOF' > app/src/main/res/xml/file_paths.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <paths>
+              <cache-path name="shared_reports" path="." />
+          </paths>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/values/strings.xml
+          <resources>
+              <string name="app_name">હુસેન હિસાબ</string>
+          </resources>
+          EOF
+
+          # Build script configuration
           cat << 'EOF' > build.gradle.kts
           plugins {
               id("com.android.application") version "8.2.2" apply false
